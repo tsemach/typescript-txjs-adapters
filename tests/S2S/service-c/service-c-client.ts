@@ -1,0 +1,98 @@
+// fork example taking from: https://medium.freecodecamp.org/node-js-child-processes-everything-you-need-to-know-e69498fe970a
+
+const { fork } = require('child_process');
+
+import { TxMountPointRegistry } from 'rx-txjs';
+
+import createLogger from 'logging';
+const logger = createLogger('service-c:client');
+
+import { TxJobRegistry, TxTask } from 'rx-txjs';
+import { TxJobServicesComponent } from 'rx-txjs';
+import { TxJobServicesHeadTask } from 'rx-txjs';
+
+import { C1Component } from '../components/C1.component'
+import { C2Component } from '../components/C2.component'
+import { C3Component } from '../components/C3.component'
+
+new C1Component();
+new C2Component();
+new C3Component();
+
+TxJobRegistry.instance.setServiceName('service-c');
+
+const task = {
+  "head": {
+    "next": "service-c"
+  },
+  "data": {
+    "job": {
+      "name": "job-1",
+      "uuid": "274X7SHNzu947toyfnqamY",
+      "stack": "",
+      "trace": "",
+      "block": "",
+      "error": false,
+      "single": false,
+      "revert": false,  
+      "current": "",
+      "executeUuid": "",
+      "sequence": 3,
+      "services": {
+        "stack": ["service-a", "service-b"], "trace": ["service-c"], 
+        "block": ["service-c", "service-a", "service-b"],
+        "current": "",
+        "jobs": [
+          {"service": "service-c", "components": ["GITHUB::GIST::C1", "GITHUB::GIST::C2", "GITHUB::GIST::C3"]},
+          {"service": "service-a", "components": ["GITHUB::GIST::A1", "GITHUB::GIST::A2", "GITHUB::GIST::A3"]},
+          {"service": "service-b", "components": ["GITHUB::GIST::B1", "GITHUB::GIST::B2", "GITHUB::GIST::B3"]}
+        ]
+      }
+    },
+    "options": {"execute": {"source": "service"}
+    },
+    "task": {
+      "head": {
+        "method": "from C3",
+        "status": "ok"
+      },
+      "data": {
+        "something": "more data here"
+      }
+    }
+  }
+}
+
+async function run() {
+  await (new TxJobServicesComponent()).init();  
+  let mp = TxMountPointRegistry.instance.get('JOB::SERVICES::MOUNTPOINT::COMPONENT');
+  
+  const forked = fork('./dist/tests/S2S/service-c/service-c-main.js');
+
+  forked.on('message', (msg) => {
+    logger.info('message from main', msg);
+    if (msg === 'service-c:up') {
+      logger.info('client: going to send task');
+      mp.tasks().next(new TxTask<TxJobServicesHeadTask>({next: 'service-c'}, task.data));
+
+      return;
+    }
+    if (msg === 'main:completed') {
+      logger.info("client: main is completed");
+
+      return;
+    }    
+  });
+  
+}
+
+run();
+
+
+// const forked = fork('dist/tests/S2S/service-a/child.js');
+
+// forked.on('message', (msg) => {
+//   console.log('Message from child', msg);
+// });
+
+// forked.send({ hello: 'world' });

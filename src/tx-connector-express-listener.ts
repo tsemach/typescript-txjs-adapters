@@ -7,20 +7,16 @@ import "reflect-metadata";
 
 import * as request from 'request-promise';
 
-//import * as uuid from 'uuid/v4';
+import * as uuid from 'uuid/v4';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
 
-//import { TxCallback } from './tx-callback';
-//import { TxConnector } from "./tx-connector"
 import { TxConnectorExpressService } from './tx-connector-express-service'
-//import { TxConnectorConnection } from './tx-connector-connection';
-import { TxConnectorExpress } from './tx-connector-express';
 
 /**
- * C2C - part of component-2-component communication.
- * use as default TxConnector implementation for express routes.
+ * TxConnectorExpressListener - listen on specifc port.
+ * one listener may have many services each on a specific path.
  */
 @injectable()
 export class TxConnectorExpressListener {
@@ -34,7 +30,7 @@ export class TxConnectorExpressListener {
    * 
    * @param connector listener has knowladge about in which connector it belong
    */
-  constructor(private connector: TxConnectorExpress) {    
+  constructor() {    
     this.express = express();
     this.middleware();
   }
@@ -63,7 +59,7 @@ export class TxConnectorExpressListener {
       return this.services.get(path);
     }
 
-    let service = new TxConnectorExpressService(this, conn, path);
+    let service = new TxConnectorExpressService(conn, path);
     this.services.set(path, service);
     this.express.use(path, service.add());
 
@@ -73,6 +69,14 @@ export class TxConnectorExpressListener {
     }    
 
     return service;
+  }
+
+  getService(path: string) {
+    if ( ! this.services.has(path) ) {
+      throw Error(`unable to find service on path - ${path}`)
+    }
+
+    return this.services.get(path);
   }
 
   private createServer() {

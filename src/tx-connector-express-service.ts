@@ -1,22 +1,24 @@
+
+import { TxConnector } from 'rx-txjs';
 import createLogger from 'logging'; 
 const logger = createLogger('TxConnectorExpressService');
 
 import * as express from 'express';
-//import * as request from 'request-promise';
+import * as request from 'request-promise';
 
 import { TxCallback } from 'rx-txjs';
 import { TxSubscribe } from 'rx-txjs';
 import { TxTask } from 'rx-txjs';
 import { TxConnectorConnection } from 'rx-txjs';
-import { TxConnectorExpressListener } from './tx-connector-express-listener';
 
-export class TxConnectorExpressService {
+export class TxConnectorExpressService implements TxConnector {
 
   private connection = new TxConnectorConnection();
   private callbacks = new TxSubscribe<this>();  
   private defined = false;
+  private nexter: TxConnector = null;
 
-  constructor(private listener: TxConnectorExpressListener, service: string, path: string) { 
+  constructor(service: string, path: string) { 
     this.connection.parse(service, path);
   }
 
@@ -91,6 +93,45 @@ export class TxConnectorExpressService {
   isDefined() {
     return this.defined;
   }
+
+  listen(service: string, route: string) {
+    throw new Error("[TxConnectorExpressService::listen] Method not implemented.");
+  }
+
+  setNexter(nexter: TxConnector) {
+    this.nexter = nexter;
+
+    return this;
+  }
+
+  async next(service: string, route: string, data: any) {
+    await this.nexter.next(service, route, data)
+    // let host = service.split(':')[0];
+    // let port = service.split(':')[1];
+    
+    // let method = 'POST'
+    // let path = route;
+
+    // if (route.includes(':')) {
+    //   method = route.split(':')[0];
+    //   path = route.split(':')[1];
+    // }     
+
+    // let options = {
+    //   method: method,
+    //   uri: `http://${host}:${port}/${path}`,
+    //   headers: {
+    //     'Content-Type': 'application/json'        
+    //   },
+    //   body: data,
+    //   json: true // automatically parses the JSON string in the response
+    // };
+    // console.log("[TxConnectorExpress::next] NEXT: OPTION + " + JSON.stringify(options, undefined, 2));
+    // logger.info(`[TxConnectorExpress::next] going to send ${JSON.stringify(data, undefined, 2)} to: ${options.uri}`);
+
+    // await request(options);  
+  }  
+
 }
 
  

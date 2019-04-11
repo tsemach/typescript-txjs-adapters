@@ -8,7 +8,6 @@ import * as request from 'request-promise';
 
 import { TxCallback } from 'rx-txjs';
 import { TxConnector } from "rx-txjs"
-import { TxConnectorConnection } from 'rx-txjs';
 import { TxConnectorExpressListener } from './tx-connector-express-listener';
 
 /**
@@ -23,31 +22,39 @@ export class TxConnectorExpress implements TxConnector {
   constructor() {        
   }
 
+  /**
+   * one listener is per port, on one port could have many paths.
+   * each path is handle by TxConnectorExpressService
+   * 
+   * @param _service host:port where the service is locate
+   * @param _path the path of the service
+   */
+  listen(_service: string, _path: string) {    
+    const listener = this.getListener(_service);  
+    
+    return listener.listen(_service, _path).setNexter(this);
+  }
+
+  getService(service: string, path: string) {    
+    if ( ! this.listners.has(service)) {
+      throw Error(`unable to find lisener - ${service}`)
+    }
+    
+    return this.listners.get(service).getService(path);
+  }
+
   private getListener(service: string) {  
 
     if (this.listners.has(service)) {
       return this.listners.get(service);
     }
 
-    let listener = new TxConnectorExpressListener(this);    
+    let listener = new TxConnectorExpressListener();    
     this.listners.set(service, listener);
 
     return listener;
   }
-
-  /**
-   * one listener is per port, on one port could have many paths.
-   * each path is handle by TxConnectorExpressService
-   * 
-   * @param service host:port where the service is locate
-   * @param path the path of the service
-   */
-  listen(service: string, path: string) {
-    let listener = this.getListener(service);
-
-    return listener.listen(service, path);
-  }
-
+  
   /**
    * find the right listener 
    * 
@@ -58,7 +65,7 @@ export class TxConnectorExpress implements TxConnector {
    * @param completeCB 
    */
   subscribe(dataCB: TxCallback<any>, errorCB?: TxCallback<any>, completeCB?: TxCallback<any>) {    
-    throw Error('[TxConnectorExpress] calling subscribe on TxConnectorExpress is illegal, use the TxRoutePoint');
+    throw Error('[TxConnectorExpress] calling subscribe on TxConnectorExpress is illegal, use the TxRoutePoint');    
   };
 
   /**

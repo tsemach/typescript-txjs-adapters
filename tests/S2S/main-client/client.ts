@@ -10,7 +10,7 @@ import { TxMountPointRegistry } from 'rx-txjs';
 import { TxJobRegistry, TxTask, TxQueuePointRegistry } from 'rx-txjs';
 import { TxJobServicesComponent } from 'rx-txjs';
 import { TxJobServicesHeadTask } from 'rx-txjs';
-import { TxConnectorRabbitMQ } from 'rx-txjs'
+import { TxConnectorRabbitMQ } from '../../../src/tx-connector-rabbitmq'
 
 TxJobRegistry.instance.setServiceName('service-c');
 TxQueuePointRegistry.instance.setDriver(TxConnectorRabbitMQ);
